@@ -13,7 +13,7 @@ GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025"
 
 # --- n8n Settings (Update these with your real n8n webhook URL!) ---
 # 🚨🚨 IMPORTANT: YOU MUST CHANGE THIS URL TO YOUR ACTUAL N8N WEBHOOK ADDRESS! 🚨🚨
-N8N_WEBHOOK_URL = "http://localhost:5678/webhook/b7c126d1-1832-4430-a468-bf85a69bbd72" 
+N8N_WEBHOOK_URL = "https://chadless-iona-unsapient.ngrok-free.dev/webhook/b7c126d1-1832-4430-a468-bf85a69bbd72" 
 N8N_ACTIVE = True # Set to False if you haven't set up the N8N webhook yet.
 
 # --- Job Title List (100+ items) ---
