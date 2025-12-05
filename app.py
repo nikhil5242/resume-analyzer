@@ -96,24 +96,28 @@ def extract_text_from_pdf_file(file_obj):
 
 def send_to_n8n(data):
     """Sends the analysis results to the configured n8n webhook."""
+    
+    # ADD THESE DEBUG LINES:
+    print("=== DEBUG: Data being sent to n8n ===")
+    print(json.dumps(data, indent=2))
+    print(f"ats_score value: {data.get('ats_score')}")
+    print("=====================================")
+    
     if not N8N_ACTIVE:
         return
     
-    st.info(f"📤 Attempting to send data to n8n webhook...")  # <-- REMOVE THIS LINE
-    
-    # rest of the function...
-    
     if "your-n8n-host" in N8N_WEBHOOK_URL:
+        # Keep this error as it's about configuration
         st.error("❌ Automation Failed: N8N_WEBHOOK_URL is still set to the placeholder 'your-n8n-host'. Please update it in the CONFIG section of the code.")
         return
         
     try:
         response = requests.post(N8N_WEBHOOK_URL, json=data, timeout=10)
         response.raise_for_status()
-        st.success(f"✅ Data sent to n8n successfully! Status: {response.status_code}")
+        # REMOVED the success message
     except requests.exceptions.RequestException as e:
-        st.error(f"❌ Automation Failed: {e}")
-        st.caption("Double-check that your n8n instance is running and the Webhook URL is correct.")
+        # REMOVED the error message - let it fail silently
+        pass  # Just pass, don't show error to candidate
 
 def call_gemini_api(resume_text, job_title):
     """Calls Gemini AI with structured JSON request and handles exponential backoff."""
@@ -399,7 +403,11 @@ if uploaded_file and job_title:
                 "filename": uploaded_file.name,
                 "job_title": job_title,
                 "extracted_text": raw_text,
-                "analysis_results": analysis
+                "ats_score": analysis.get("ats_score", 0),
+                "summary": analysis.get("summary", ""),
+                "skills": analysis.get("skills", []),
+                "education_summary": analysis.get("education_summary", ""),
+                "experience_years": analysis.get("experience_years", 0)
             }
             send_to_n8n(n8n_payload)
             
