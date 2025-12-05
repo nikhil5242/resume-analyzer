@@ -99,7 +99,9 @@ def send_to_n8n(data):
     if not N8N_ACTIVE:
         return
     
-    st.info(f"📤 Attempting to send data to n8n webhook...")
+    st.info(f"📤 Attempting to send data to n8n webhook...")  # <-- REMOVE THIS LINE
+    
+    # rest of the function...
     
     if "your-n8n-host" in N8N_WEBHOOK_URL:
         st.error("❌ Automation Failed: N8N_WEBHOOK_URL is still set to the placeholder 'your-n8n-host'. Please update it in the CONFIG section of the code.")
@@ -319,11 +321,14 @@ def animated_gauge_chart(score):
 st.markdown(
     """
     <div style='background-color: #1f77b4; padding: 20px; border-radius: 10px;'>
+        <div style='text-align: center; margin-bottom: 5px;'>
+            <h3 style='color: white; margin: 0; font-weight: 600;'>TalentScan Pro</h3>
+        </div>
         <h1 style='color: white; text-align: center; margin-bottom: 0px;'>
-            🤖 AI Resume Matcher & Analyzer
+            🤖 TalentScan Pro - Automated Resume Screening
         </h1>
         <p style='color: #c7e9ff; text-align: center; font-size: 1.1em;'>
-            Upload your PDF and match it against a target job for a calculated ATS score and improvements.
+            Internal tool for scoring resumes and alerting HR on qualified candidates.
         </p>
     </div>
     """,
@@ -332,10 +337,10 @@ st.markdown(
 
 with st.expander("❓ How It Works"):
     st.markdown("""
-    1. Target Job: Select the job title you are applying for. The AI will calculate the score based on how well your resume matches the requirements of that specific role (e.g., matching 'Software Engineer' keywords).
-    2. Upload: Upload your PDF resume.
-    3. Analysis: The Gemini model acts as an ATS, calculating your match score and providing targeted advice.
-    4. Animated Gauge: The match score is displayed on an animated gauge chart for a clear, real-time result.
+   1. **Job Role**: Select the target job position you're screening for. The AI calculates ATS score based on role-specific requirements.
+   2. **Resume Upload**: Upload candidate resumes in PDF format for automated screening.
+   3. **AI Analysis**: Gemini AI evaluates resumes against the selected role, providing ATS scores and candidate insights.
+   4. **HR Alert**: Candidates scoring above 70% are automatically flagged for HR review with their match scores.
     """)
 
 st.markdown("---")
@@ -368,123 +373,26 @@ if uploaded_file and job_title:
     bytes_data = uploaded_file.read()
     file_like = BytesIO(bytes_data)
 
-    st.success(f"File {uploaded_file.name} uploaded successfully. Matching against: {job_title}.")
+    st.success(f"File {uploaded_file.name} uploaded successfully.")
     
     # Text Extraction
     raw_text = extract_text_from_pdf_file(file_like)
     
     # Analysis Button
-    if st.button(f"🚀 ANALYZE MATCH FOR {job_title.upper()}", type="primary", use_container_width=True):
+    if st.button(f"🚀 SUBMIT APPLICATION FOR {job_title.upper()}", type="primary", use_container_width=True):
         if not raw_text:
             st.error("Cannot analyze an empty resume.")
         else:
-            with st.spinner(f"🧠 Calculating ATS match score for {job_title}..."):
+            with st.spinner("Processing..."):
                 analysis = call_gemini_api(raw_text, job_title)
 
             st.session_state['analysis'] = analysis
             st.session_state['job_title'] = job_title
             
-            st.markdown("## 🎯 Match Analysis Complete!")
-            
-            # --- 1. Display Visual Metrics ---
-            
-            score_col, exp_col, skill_col = st.columns([1.5, 1, 1])
+            st.success("✅ Application Submitted Successfully!")
+            st.info("Your application has been Submitted and is being reviewed. You will be contacted if your qualifications match our requirements.")
 
-            with score_col:
-                st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
-                animated_gauge_chart(analysis.get("ats_score", 0))
 
-            
-            with exp_col:
-                st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-                st.metric(
-                    label="⏳ Experience (Years)", 
-                    value=analysis.get("experience_years", "N/A"),
-                    help="Total professional experience interpreted from dates in the document."
-                )
-                
-            with skill_col:
-                st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
-                st.metric(
-                    label="💡 Skills Identified", 
-                    value=len(analysis.get("skills", [])),
-                    help="The total number of unique technical and soft skills the AI recognized."
-                )
-
-            st.markdown("---")
-
-            # --- 2. Summary and Skills ---
-
-            st.subheader("📝 Key Summary")
-            st.info(f"{analysis.get('summary')}", icon="✨")
-
-            st.subheader("🛠 Skills Found")
-            skills_list = analysis.get("skills", [])
-            st.markdown(f'<div style="background-color: #e0f7fa; padding: 10px; border-left: 5px solid #00bcd4; border-radius: 5px;">{", ".join(skills_list) or "No major skills detected."}</div>', unsafe_allow_html=True)
-            
-            st.markdown("---")
-            
-            # --- EDUCATION SECTION (Formatted as a list) ---
-            st.subheader("🎓 Education Summary")
-            education_text = analysis.get("education_summary", "Not found or unclear.")
-            
-            if education_text and education_text != "Not found or unclear.":
-                education_items = education_text.split(';')
-                formatted_education = ""
-                for item in education_items:
-                    formatted_education += f"- {item.strip()}\n"
-                st.info(formatted_education, icon="📚")
-            else:
-                st.info(f"{education_text}", icon="📚")
-
-            st.markdown("---")
-
-            # --- 3. Targeted Improvements (NEW GROUPED DISPLAY) ---
-            st.subheader(f"📌 Targeted Improvements for {job_title}")
-            
-            improvement_list = analysis.get("improvements", [])
-            
-            # Grouping logic
-            improvement_groups = {
-                "Summary": [],
-                "Skills": [],
-                "Experience": [],
-                "Education": [],
-                "General": []
-            }
-
-            for item in improvement_list:
-                # Try to extract the section prefix (e.g., "Experience:")
-                parts = item.split(':', 1)
-                if len(parts) == 2:
-                    section = parts[0].strip().title()
-                    content = parts[1].strip()
-                else:
-                    section = "General"
-                    content = item.strip()
-                
-                # Use standard groups or fall back to General
-                if section in improvement_groups:
-                    improvement_groups[section].append(content)
-                else:
-                    improvement_groups["General"].append(content)
-
-            # Displaying the grouped improvements
-            for section, items in improvement_groups.items():
-                if items:
-                    # Use a distinct styling for the section headers and feedback blocks
-                    st.markdown(f"#### ✍ {section} Enhancements")
-                    
-                    # Format the list content
-                    list_markdown = ""
-                    for item in items:
-                        list_markdown += f"- {item}\n"
-                    
-                    # Use a distinct visual element for the categorized feedback
-                    # Yellow background (#fef3c7) with orange border (#fbbf24) for Warning/Improvement
-                    st.markdown(f'<div style="background-color: #fef3c7; border-left: 5px solid #fbbf24; padding: 10px; margin-bottom: 15px; border-radius: 5px;">{list_markdown}</div>', unsafe_allow_html=True)
-
-            st.markdown("---")
             
             # 5. Send data to n8n webhook (The actual automation step)
             n8n_payload = {
@@ -497,13 +405,5 @@ if uploaded_file and job_title:
             
 
 else:
-    st.info("⬆ Please select your target job and upload a resume PDF to begin the analysis.", icon="⬆")
+    st.info("⬆ Please select your target job and upload a resume PDF ", icon="⬆")
 
-# Display the analysis results persistently if they are in the session state
-if 'analysis' in st.session_state:
-    analysis = st.session_state['analysis']
-    job_title = st.session_state['job_title']
-    
-    # This block is required to prevent the UI from clearing when the user changes the job title/uploads a file.
-    if st.session_state.get('last_run_success', False):
-        pass
