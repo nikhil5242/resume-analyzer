@@ -415,3 +415,4 @@ if uploaded_file and job_title:
 else:
     st.info("⬆ Please select your target job and upload a resume PDF ", icon="⬆")
 
+
