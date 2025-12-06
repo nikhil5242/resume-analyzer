@@ -95,29 +95,35 @@ def extract_text_from_pdf_file(file_obj):
     return text
 
 def send_to_n8n(data):
-    """Sends the analysis results to the configured n8n webhook."""
+    """Sends the analysis results to the configured n8n webhook with debug logging."""
     
-    # ADD THESE DEBUG LINES:
+    # DEBUG: Show what is being sent
     print("=== DEBUG: Data being sent to n8n ===")
     print(json.dumps(data, indent=2))
     print(f"ats_score value: {data.get('ats_score')}")
     print("=====================================")
     
     if not N8N_ACTIVE:
+        print("N8N integration is inactive. Skipping webhook send.")
         return
     
     if "your-n8n-host" in N8N_WEBHOOK_URL:
-        # Keep this error as it's about configuration
-        st.error("❌ Automation Failed: N8N_WEBHOOK_URL is still set to the placeholder 'your-n8n-host'. Please update it in the CONFIG section of the code.")
+        st.error("❌ Automation Failed: N8N_WEBHOOK_URL is still a placeholder. Update it!")
         return
-        
+    
     try:
         response = requests.post(N8N_WEBHOOK_URL, json=data, timeout=10)
-        response.raise_for_status()
-        # REMOVED the success message
+        # DEBUG: Show status
+        print("N8N webhook response status:", response.status_code)
+        print("N8N webhook response text:", response.text)
+        
+        if response.status_code == 200:
+            print("✅ Data successfully sent to n8n webhook.")
+        else:
+            print("⚠ Warning: Webhook returned non-200 status.")
+            
     except requests.exceptions.RequestException as e:
-        # REMOVED the error message - let it fail silently
-        pass  # Just pass, don't show error to candidate
+        print("❌ Failed to send data to n8n:", e)
 
 def call_gemini_api(resume_text, job_title):
     """Calls Gemini AI with structured JSON request and handles exponential backoff."""
@@ -398,7 +404,8 @@ if uploaded_file and job_title:
 
 
             
-            # 5. Send data to n8n webhook (The actual automation step)
+            
+            # ---------------- n8n webhook send ----------------
             n8n_payload = {
                 "filename": uploaded_file.name,
                 "job_title": job_title,
@@ -409,7 +416,10 @@ if uploaded_file and job_title:
                 "education_summary": analysis.get("education_summary", ""),
                 "experience_years": analysis.get("experience_years", 0)
             }
+
+            # Send to n8n webhook
             send_to_n8n(n8n_payload)
+
             
 
 else:
