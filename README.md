@@ -61,11 +61,5 @@ The system is designed as a **real-world automation pipeline**, integrating AI, 
 - Automated HR email notification for candidates scoring **>80%**  
 - Resume evaluation results displayed instantly in the Streamlit UI  
 
----
 
-## 🚀 Installation & Setup
 
-### 1️⃣ Clone the Repository
-```bash
-git clone <your-repo-url>
-cd ai-resume-analyzer
